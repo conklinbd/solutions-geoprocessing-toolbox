@@ -12,7 +12,7 @@ Data Management tools help to prepare, format, filter, and organize your data in
 * [Imagery Basemap Tools](#imagery-basemap-tools)
 * [Network Data Preparation Tools](#network-data-preparation-tools)
 * [Patrol Data Capture Tools](#patrol-data-capture-tools)
-* [Position Analysis Tools](#position-analysis-tools)
+* [Import and Conversion Tools](#import-and-conversion-tools)
 * [Publishable Task Tools](#publishable-task-tools)
 * [Scanned Map Basemap Tools](#scanned-map-basemap-tools)
 * [Topographic Basemap Tools](#topographic-basemap-tools)
@@ -23,6 +23,7 @@ Data Management tools help to prepare, format, filter, and organize your data in
 ## Adjust Sample Data Dates Tools
 
 This toolbox contains a tool to adjust the date fields of the sample data included with the Inciedent Analysis toolbox.
+These tools are a part of the Incident Analysis Template: http://www.arcgis.com/home/item.html?id=384d223647b24bcf9d2c6fd44f90d17f
 
 * Change Sample Data Dates to Recent Dates
 
@@ -63,6 +64,7 @@ These tools are used to prepare road data for use in a road network dataset.
 ## Patrol Data Capture Tools
 
 Includes tools to import data that has been gathered on or after a patrol. This includes GPS data, saved in .gpx files, and Patrol Report data, saved in .xml files (as saved by an Infopath form)
+These tools are a part of the Patrol Data Capture template: http://www.arcgis.com/home/item.html?id=6238c4cdb3ca4a7ea54287241f53349f
 
 * Append Tracks to DB
 * Despike GPS Log
@@ -74,19 +76,20 @@ Includes tools to import data that has been gathered on or after a patrol. This 
 * Rejoin Track Parts
 * Remove Duplicate GPS Data
 
-## Position Analysis Tools
+## Import and Conversion Tools (formerly Position Analysis Tools)
 
-Tools for converting tabular information to different geometries, and generating positional datasets.
+Tools for converting tabular information to different geometries, and generating coordinate location datasets.
 
 * Convert Coordinates
 * Locate Event
-* Range Rings
 * Table To 2-Point Line
 * Table To Ellipse
 * Table To Line Of Bearing
 * Table To Point
 * Table To Polygon
 * Table To Polyline
+
+** - Range Rings has been removed from Import and conversion as it is a duplication of the same tool in Visibility and Range Tools.
 
 ## Publishable Task Tools
 
@@ -105,6 +108,7 @@ Publishable Tasks are a series of models that should be published as geoprocessi
 ## Scanned Map Basemap Tools
 
 Tools for building a basemap from CADRG/ECRG scanned imagery.
+These tools are part of the Scanned Maps Template: http://www.arcgis.com/home/item.html?id=7837d4e358c644a98cf47f395e61d84d
 
 * Add Miscellaneous CADRG/ECRG Rasters To Mosaic Dataset
 * Add Standard CADRG/ECRG Rasters To Mosaic Dataset
@@ -114,6 +118,7 @@ Tools for building a basemap from CADRG/ECRG scanned imagery.
 ## Topographic Basemap Tools
 
 Tools to assist in building a topographic basemap from feature data in the Urban Topographic Data Store (NGA's TFDM) geodatabase schema.
+These tools are part of the Topographic Basemap Map Template: http://www.arcgis.com/home/item.html?id=a2368ba5e3ac4459851a1ac3b5891c08
 
 * Add DTED 1,2 to Elevation Mosaic Dataset
 * Create Elevation Mosaic Dataset

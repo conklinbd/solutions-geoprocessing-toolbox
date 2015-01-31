@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# 
+#
 # ==================================================
 # PointTargetGRG.py
 # --------------------------------------------------
 # Built on ArcGIS
 # ==================================================
-# 
+#
 # Creates a Gridded Reference Graphic
 #
-# 
+#
 
 import os, sys, math, traceback
 import arcpy
@@ -38,6 +38,7 @@ labelStyle = arcpy.GetParameterAsText(7)
 outputFeatureClass = arcpy.GetParameterAsText(8)
 labelStartPos = arcpy.GetParameterAsText(9)
 tempOutput = "in_memory" + "\\" + "tempFishnetGrid"
+sysPath = sys.path[0]
 
 def labelFeatures(layer, field):
     if layer.supports("LABELCLASSES"):
@@ -48,10 +49,22 @@ def labelFeatures(layer, field):
         arcpy.RefreshActiveView()
 
 def findLayerByName(layerName):
-    #TODO: Pro updates for arcpy.mapping
-    for layer in arcpy.mapping.ListLayers(mxd):
-        if layer.name == layerName:
-            return layer
+    #UPDATE
+    if isPro:
+          for layer in maplist.listLayers():
+            if layer.name == layerName:
+                arcpy.AddMessage("Found matching layer [" + layer.name + "]")
+                return layer
+            else:
+                arcpy.AddMessage("Incorrect layer: [" + layer.name + "]")
+    else:
+        for layer in arcpy.mapping.ListLayers(mxd):
+            if layer.name == layerName:
+                arcpy.AddMessage("Found matching layer [" + layer.name + "]")
+                return layer
+            else:
+                arcpy.AddMessage("Incorrect layer: [" + layer.name + "]")
+
 def RotateFeatureClass(inputFC, outputFC,
                        angle=0, pivot_point=None):
     """Rotate Feature Class
@@ -269,8 +282,21 @@ def ColIdxToXlName(index):
         else:
             return chr(index + ord('A') - 1) + result
 
-mxd = arcpy.mapping.MapDocument('CURRENT')
-df = arcpy.mapping.ListDataFrames(mxd)[0]
+#UPDATE
+gisVersion = arcpy.GetInstallInfo()["Version"]
+
+mxd, df, aprx, mapList = None, None, None, None
+isPro = False
+if gisVersion == "1.0": #Pro:
+    from arcpy import mp
+    aprx = arcpy.mp.ArcGISProject("CURRENT")
+    maplist = aprx.listMaps()[0]
+    isPro = True
+else:
+    from arcpy import mapping
+    mxd = arcpy.mapping.MapDocument('CURRENT')
+    df = arcpy.mapping.ListDataFrames(mxd)[0]
+    isPro = False
 
 # If grid size is drawn on the map, use this instead of cell width and cell height
 drawn = False
@@ -390,10 +416,11 @@ elif (labelStartPos == "Lower-Right"):
 
 # Import the custom toolbox with the fishnet tool in it, and run this. This had to be added to a model,
 # because of a bug, which will now allow you to pass variables to the Create Fishnet tool.
-toolboxPath = os.path.dirname(os.path.dirname(arcpy.env.workspace)) + "\\toolboxes\ClearingOperations.tbx"
-arcpy.ImportToolbox(toolboxPath, "ClearingOperations")
+#UPDATE
+toolboxPath = os.path.dirname(sysPath) + "\\Clearing Operations Tools.tbx"
+arcpy.ImportToolbox(toolboxPath)
 arcpy.AddMessage("Creating Fishnet Grid")
-arcpy.CreateFishnet_ClearingOperations(tempOutput, originCoordinate, yAxisCoordinate, 0, 0, str(numberCellsHo), str(numberCellsVert), oppCornerCoordinate, "NO_LABELS", fullExtent, "POLYGON")
+arcpy.Fishnet_ClearingOperations(tempOutput, originCoordinate, yAxisCoordinate, 0, 0, str(numberCellsHo), str(numberCellsVert), oppCornerCoordinate, "NO_LABELS", fullExtent, "POLYGON")
 
 # Sort the grid upper left to lower right, and delete the in memory one
 arcpy.AddMessage("Sorting the grid for labeling")
@@ -446,16 +473,22 @@ else:
     arcpy.CopyFeatures_management(tempSort, outputFeatureClass)
 arcpy.Delete_management(tempSort)
 
-# Get and label the output feature
-layerToAdd = arcpy.mapping.Layer(outputFeatureClass)
-arcpy.mapping.AddLayer(df, layerToAdd, "AUTO_ARRANGE")
-targetLayerName = os.path.basename(outputFeatureClass)
-layer = findLayerByName(targetLayerName)
 
-if(layer):
-    arcpy.AddMessage("Labeling grids")
-    labelFeatures(layer, gridField)
+# Get and label the output feature
+#TODO: Update once applying symbology in Pro is fixed.
+#UPDATE
+if isPro == False:
+    layerToAdd = arcpy.mapping.Layer(outputFeatureClass)
+    arcpy.mapping.AddLayer(df, layerToAdd, "AUTO_ARRANGE")
+
+    targetLayerName = os.path.basename(outputFeatureClass)
+    layer = findLayerByName(targetLayerName)
+
+    if(layer):
+        arcpy.AddMessage("Labeling grids")
+        labelFeatures(layer, gridField)
 
 # Apply symbology to the GRG layer
-symbologyPath = os.path.dirname(workspace) + "\\Layers\GRG.lyr"
-arcpy.ApplySymbologyFromLayer_management(layer, symbologyPath)
+#UPDATE
+#symbologyPath = os.path.dirname(workspace) + "\\Layers\GRG.lyr"
+#arcpy.ApplySymbologyFromLayer_management(layer, symbologyPath)

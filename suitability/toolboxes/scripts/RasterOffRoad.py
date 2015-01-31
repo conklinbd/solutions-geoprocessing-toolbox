@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# Copyright 2014 Esri
+# Copyright 2015 Esri
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,11 +14,11 @@
 #------------------------------------------------------------------------------
 
 # ==================================================
-# FastSingleVehicleCCM.py
+# RasterOffRoad.py
 # --------------------------------------------------
-# Built for ArcGIS 10.1
+# Built for ArcGIS 10.3
 # --------------------------------------------------
-# 
+#
 # ==================================================
 
 
@@ -33,9 +33,9 @@ from arcpy import sa
 
 # LOCALS ===========================================
 deleteme = []
-debug = False
+debug = True
 GCS_WGS_1984 = arcpy.SpatialReference("WGS 1984")
-webMercator = arcpy.SpatialReference("WGS 1984 Web Mercator (Auxiliary Sphere)")
+## webMercator = arcpy.SpatialReference("WGS 1984 Web Mercator (Auxiliary Sphere)")
 ccmFactorList = []
 
 # ARGUMENTS ========================================
@@ -59,10 +59,14 @@ wet_dry = arcpy.GetParameterAsText(11) # "DRY" or "WET", where "DRY" is default
 
 inputSurfaceRoughness = arcpy.GetParameterAsText(12)
 inputSurfaceRoughnessTable = arcpy.GetParameterAsText(13)
+commonSpatialReference = arcpy.GetParameter(14)
+commonSpatialReferenceAsText = arcpy.GetParameterAsText(14)
+
+
 # ==================================================
 
 try:
-    
+
     if debug == True: arcpy.AddMessage("START: " + str(time.strftime("%m/%d/%Y  %H:%M:%S", time.localtime())))
     scratch = env.scratchGDB
     if debug == True: arcpy.AddMessage("scratch: " + str(scratch))
@@ -71,9 +75,28 @@ try:
     env.compression = "LZ77"
     env.extent = arcpy.Describe(inputAOI).Extent
     env.mask = inputAOI
-    env.cellSize = max(arcpy.Describe(inputAOI).Extent.width,arcpy.Describe(inputAOI).Extent.height)/2000.0
-    #env.cellSize = 90.0
-    if debug == True: arcpy.AddMessage("Cell Size: " + str(env.cellSize))
+    
+    calcCellSize = None
+    GridSize = 2000.0
+    if commonSpatialReferenceAsText == '':
+        commonSpatialReference = arcpy.Describe(inputAOI).spatialReference
+        arcpy.AddWarning("Spatial Reference is not defined. Using Spatial Reference of Input Area Of Interest: " + str(commonSpatialReference.name))
+        calcCellSize = max(arcpy.Describe(inputAOI).Extent.width,arcpy.Describe(inputAOI).Extent.height)/GridSize
+    elif commonSpatialReference.type == "Projected":
+        inputAOIExtent = arcpy.Describe(inputAOI).extent
+        newAOIExtent = inputAOIExtent.projectAs(commonSpatialReference)
+        calcCellSize = max(newAOIExtent.width,newAOIExtent.height)/GridSize
+    else:
+        arcpy.AddError("Undefined Spatial Reference or type is Geographic.\nInput Area of Interest feature or Spatial Reference must be of type Projected.")
+        raise
+    
+    if calcCellSize == 0.0:
+        arcpy.AddError("Calculated a zero cell size. Spatial references might not be comparable.")
+        raise
+    
+    env.spatialReference = commonSpatialReference
+    arcpy.AddMessage("Using cell size: " + str(calcCellSize))
+    env.cellSize = calcCellSize
     intersectionList = []
 
     # Load vehicle Parameters Table into a dictionary
@@ -102,14 +125,14 @@ try:
     outSlope = sa.ExtractByMask(inputSlope,inputAOI)
     outSlope.save(slopeClip)
     deleteme.append(slopeClip)
-    
+
     # Set all Slope values greater than the vehicle's off road max to that value
     arcpy.AddMessage("Reclassifying Slope ...")
     reclassSlope = os.path.join(os.path.dirname(scratch),"reclassSlope.tif")
     if debug == True: arcpy.AddMessage("reclassSlope: " + str(reclassSlope))
     #float(vehicleParams[5])
     if debug == True: arcpy.AddMessage(str(time.strftime("Con: %m/%d/%Y  %H:%M:%S", time.localtime())))
-    outCon = sa.Con(sa.Raster(slopeClip) > float(vehicleParams[5]),float(vehicleParams[5]),sa.Raster(slopeClip))    
+    outCon = sa.Con(sa.Raster(slopeClip) > float(vehicleParams[5]),float(vehicleParams[5]),sa.Raster(slopeClip))
     # FAILS HERE:
     outCon.save(reclassSlope)
     # ERROR 010240: Could not save raster dataset to C:\Workspace\MAoT for A4W\A4W\test.gdb\reclassSlope with output format FGDBR.
@@ -139,13 +162,13 @@ try:
     outElev = sa.ExtractByMask(inputElevation,inputAOI)
     outElev.save(elevClip)
     deleteme.append(elevClip)
-    
+
     # make constant raster
     constNoEffect = os.path.join(env.scratchGDB,"constNoEffect")
     outConstNoEffect = sa.CreateConstantRaster(1.0,"FLOAT",env.cellSize,arcpy.Describe(inputAOI).Extent)
     outConstNoEffect.save(constNoEffect)
     deleteme.append(constNoEffect)
-    
+
     # f1: vehicle parameters
     f1 = os.path.join(env.scratchFolder,"f1.tif")
     # f1 = (vehicle max off-road slope %) - (surface slope %) / (vehicle max on-road slope %) / (vehicle max KPH)
@@ -157,7 +180,7 @@ try:
     outF1.save(f1)
     ccmFactorList.append(f1)
     deleteme.append(f1)
-    
+
 
     # f2: surface change
     arcpy.AddMessage("Surface Curvature ...")
@@ -180,18 +203,19 @@ try:
     fsRasStat = sa.Raster(focalStats)
     if debug == True:
         arcpy.AddMessage("maxRasStat: " + str(maxRasStat) + " - " + str(type(maxRasStat)))
-        arcpy.AddMessage("fsRasStat: " + str(fsRasStat) + " - " + str(type(fsRasStat)))        
+        arcpy.AddMessage("fsRasStat: " + str(fsRasStat) + " - " + str(type(fsRasStat)))
     f2Calc = (maxRasStat - fsRasStat) / maxRasStat # (max - cell/max)
     f2Calc.save(f2)
     deleteme.append(f2)
     ccmFactorList.append(f2)
-    
+
     #TODO: Need more thorough and complete checks of inputs
     #if inputVegetation != types.NoneType and arcpy.Exists(inputVegetation) == True: #UPDATE
     if inputVegetation != None and arcpy.Exists(inputVegetation) == True:
         # f3: vegetation
         f3t = os.path.join(scratch,"f3t")
-        f3 = os.path.join(scratch,"f3")
+        #f3 = os.path.join(scratch,"f3") #ERROR 010240 : Could not save raster dataset to <value> with output format <value>.
+        f3 = os.path.join(os.path.dirname(scratch),"f3.tif")
         arcpy.AddMessage("Clipping vegetation to fishnet and joining parameter table...")
         vegetation = os.path.join("in_memory","vegetation")
         if debug == True: arcpy.AddMessage(str(time.strftime("Clip Vegetation: %m/%d/%Y  %H:%M:%S", time.localtime())))
@@ -210,12 +234,13 @@ try:
         deleteme.append(f3)
         #TODO: what about areas in the AOI but outside VEG? No effect (value = 1.0)?
         ccmFactorList.append(f3)
-    
+
     #if inputSoils != types.NoneType and  arcpy.Exists(inputSoils) == True: #UPDATE
     if inputSoils != None and  arcpy.Exists(inputSoils) == True:
         # f4: soils
         f4t = os.path.join(scratch,"f4t")
-        f4 = os.path.join(scratch,"f4")
+        #f4 = os.path.join(scratch,"f4") #ERROR 010240 : Could not save raster dataset to <value> with output format <value>.
+        f4 = os.path.join(os.path.dirname(scratch),"f4.tif")
         arcpy.AddMessage("Clipping soils to fishnet and joining parameter table...")
         clipSoils = os.path.join("in_memory","clipSoils")
         if debug == True: arcpy.AddMessage(str(time.strftime("Clip Soils: %m/%d/%Y  %H:%M:%S", time.localtime())))
@@ -232,12 +257,13 @@ try:
         outF4T.save(f4)
         deleteme.append(f4)
         ccmFactorList.append(f4)
-    
+
     #if inputSurfaceRoughness != types.NoneType and  arcpy.Exists(inputSurfaceRoughness) == True: #UPDATE
     if inputSurfaceRoughness != None and  arcpy.Exists(inputSurfaceRoughness) == True:
         # f5: surface roughness
         f5t = os.path.join(scratch,"f5t")
-        f5 = os.path.join(scratch,"f5")
+        #f5 = os.path.join(scratch,"f5") #ERROR 010240 : Could not save raster dataset to <value> with output format <value>.
+        f5 = os.path.join(os.path.dirname(scratch),"f5.tif")
         arcpy.AddMessage("Clipping roughness to fishnet and joining parameter table...")
         clipRoughness = os.path.join("in_memory","clipRoughness")
         if debug == True: arcpy.AddMessage(str(time.strftime("Clip Roughness: %m/%d/%Y  %H:%M:%S", time.localtime())))
@@ -275,11 +301,11 @@ try:
         raise WrongFactors(ccmFactorList)
     targetCCM.save(tempCCM)
     arcpy.CopyRaster_management(tempCCM,outputCCM)
-    
+
     # set the output
     arcpy.SetParameter(5,outputCCM)
     if debug == True: arcpy.AddMessage("DONE: " + str(time.strftime("%m/%d/%Y  %H:%M:%S", time.localtime())))
-    
+
     # cleanup intermediate datasets
     if debug == True: arcpy.AddMessage("Removing intermediate datasets...")
     for i in deleteme:
@@ -288,23 +314,23 @@ try:
             arcpy.Delete_management(i)
             pass
     if debug == True: arcpy.AddMessage("Done")
-    
+
 #except "WrongFactors", ccmlist: #UPDATE
 except "WrongFactors" as ccmlist:
     msg = "Wrong Number of Factors given: " + str(ccmlist)
     arcpy.AddError(msg)
     #print msg #UPDATE
     print(msg)
-    
+
 except arcpy.ExecuteError:
     if debug == True: arcpy.AddMessage("CRASH: " + str(time.strftime("%m/%d/%Y  %H:%M:%S", time.localtime())))
         # Get the traceback object
     tb = sys.exc_info()[2]
     tbinfo = traceback.format_tb(tb)[0]
     arcpy.AddError("Traceback: " + tbinfo)
-    # Get the tool error messages 
-    msgs = arcpy.GetMessages() 
-    arcpy.AddError(msgs) 
+    # Get the tool error messages
+    msgs = arcpy.GetMessages()
+    arcpy.AddError(msgs)
     #print msgs #UPDATE
     print(msgs)
 
@@ -327,5 +353,5 @@ except:
     print(pymsg + "\n")
     #print msgs #UPDATE
     print(msgs)
-    
-    
+
+

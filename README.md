@@ -8,6 +8,7 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
 
 * [Features](#features)
 * [Requirements](#requirements)
+* [A Tale of Two Toolboxes](#a tale of two toolboxes)
 * [Instructions](#instructions)
 * [Resources](#resources)
 * [Issues](#issues)
@@ -19,7 +20,7 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
 * Specialized geoprocessing models and tools for general defense and intelligence analysis tasks including
   * Tools for visibility and range analysis
   * Tools for analyzing the battlefield environment
-  * Tools for position analysis
+  * Tools for data management and coordinates
 
 * The [**capability**](./capability/README.md) folder contains:
   * Helicopter Landing Zone Tools
@@ -28,7 +29,7 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
   
 * The [**data_management**](./data_management/README.md) folder contains:
   * Adjust Sample Data Dates Tools
-  * Position Analysis Tools
+  * Import and Conversion Tools (formerly Position Analysis Tools)
   * Publishable Task Tools
   * Build Elevation Mosaic Tools
   * Geonames Tools
@@ -44,6 +45,9 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
   
 * The [**patterns**](./patterns/README.md) folder contains:
   * Incident Analysis Tools
+  * Landsat Tools
+  * Change Detection Tools
+  * Movement Analysis Tools
   
 * The [**suitability**](./suitability/README.md) folder contains:
   * Military Aspects of Terrain Tools
@@ -57,7 +61,8 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
 
 ## Requirements
 
-* ArcGIS Desktop 10.2.2 or later Standard 
+* ArcGIS Desktop 10.3 or ArcGIS Pro 1.0
+    * Check [Releases](https://github.com/Esri/solutions-geoprocessing-toolbox/releases) for tools for previous versions of ArcGIS Desktop
 * Apache Ant - used to download and extract dependent data and run test drivers
 * Java Runtime Environment (JRE) or Developer Kit (JDK) (required by Ant)
 * Some tools require additional licenses (these tools will be disabled if license is unavailable), see READMEs for more information: 
@@ -68,6 +73,20 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
     * For example these tools require Desktop Advanced and Spatial Analyst:
         * Path Slope Tools.tbx\Path Slope
         * Visibility and Range Tools.tbx\Range Fan
+
+## A Tale of Two Toolboxes
+
+The solutions-geoprocessing-toolbox repo is now supporting toolboxes for both ArcMap/ArcCatalog/ArcGlobe/ArcScene and also ArcGIS Pro. Toolboxes that are modified in ArcGIS Pro are not
+backwards compatible with other ArcGIS Desktop applications (ArcMap), so most toolboxes are duplicated for one or the other. The naming of these toolboxes is as follows:
+
+* Toolboxes that are for ArcGIS Desktop 10.3 will include *_10.3* after the toolbox name. For example: **Visibility and Range Tools_10.3.tbx**
+* Toolboxes with a 'unversioned' name are for ArcGIS Pro 1.0. For example: **Visibility and Range Tools.tbx**
+
+Please note that some toolboxes are for ArcGIS Pro only, or ArcGIS Desktop 10.3 only. These toolboxes will follow the above naming convention, but will not have a duplicate.
+
+* [Product info for ArcGIS Pro](http://www.esri.com/software/arcgis-pro)
+* [Help for ArcGIS Pro](http://pro.arcgis.com/en/pro-app/)
+
 
 ## Instructions
 
@@ -83,8 +102,8 @@ The ArcGIS Solutions Geoprocessing Toolbox is a set of models, scripts, and tool
 ### Downloading Data Dependencies/Test Data
 
 * Install and configure Apache Ant
-    * Download Ant from the [Apache Ant Project](http://ant.apache.org/bindownload.cgi) and unzip to a location on your machine
-    * Set environment variable `ANT_HOME` to Ant Install Location
+    * Download Ant from the [Apache Ant Project](http://ant.apache.org/bindownload.cgi) and unzip to a location on your machine, for example 'c:\apache-ant-1.9.2'.
+    * Set environment variable `ANT_HOME` to Ant Install Location (e.g. the folder from first step)
     * Add Ant\bin to your path: `%ANT_HOME%\bin`
     * NOTE: Ant requires Java [Runtime Environment (JRE) or Developer Kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) to be installed and the environment variable `JAVA_HOME` to be set to this location
     * To verify your Ant Installation: Open Command Prompt> `ant -h` and verify it runs and returns the help options correctly 

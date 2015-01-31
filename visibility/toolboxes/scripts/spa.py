@@ -1,20 +1,22 @@
-# ==================================================
+#------------------------------------------------------------------------------
+# Copyright 2014 Esri
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#------------------------------------------------------------------------------
 # spa.py
-# --------------------------------------------------
-# Built on ArcGIS 10.2
-# --------------------------------------------------
-#
-# Performs a suitability analysis on terrain for the purpose of creating a Drop Zone
-#
-# Data is presumed to be in the WGS 1984 Auxiliary Sphere spatial reference (GCS_WGS_1984)
-#
-# Spatial Analyst is required for the use of the Hillshade tool.
-#
-# ==================================================
-# Usage: dropzones <inputAOI> <inputElevation> <inputDatetime> <outputHillshade>
-# Description:
-# Preliminary selection of areas that can support troops and material delivered by parachute.
-# ---------------------------------------------------------------------------3
+# Description: Sun Position and Hillshade
+# Requirements: ArcGIS Desktop Standard
+#------------------------------------------------------------------------------
+
 
 # IMPORTS ==========================================
 import os, sys, math, traceback, types, datetime, time
@@ -91,7 +93,8 @@ def CenterPoint(fc):
     # Get the centerpoint and project on the fly to WGS84 due to the calculations
     # used by the Sun Position algorithm (lat/lon required)
     rows = arcpy.SearchCursor(aoiCenter, "", GCS_WGS_1984, shapeName)
-    row = rows.next()
+    #row = rows.next() #UPDATE
+    row = next(rows)
     geom = row.getValue(shapeName)
     point = geom.getPart()
 
@@ -334,7 +337,8 @@ except arcpy.ExecuteError:
     # Get the tool error messages
     msgs = arcpy.GetMessages()
     arcpy.AddError(msgs)
-    print msgs
+    #print msgs #UPDATE
+    print(msgs)
 except MissingParameterError as e:
     if debug == True:
         arcpy.AddMessage("CRASH: " + str(time.strftime("%m/%d/%Y  %H:%M:%S", time.localtime())))
@@ -345,7 +349,8 @@ except MissingParameterError as e:
     # Get the tool error messages
     msg = e.value + " parameter is missing."
     arcpy.AddError(msg)
-    print msg
+    #print msg #UPDATE
+    print (msg)
 except:
     if debug == True:
         arcpy.AddMessage("CRASH: " + str(time.strftime("%m/%d/%Y  %H:%M:%S", time.localtime())))
@@ -362,9 +367,10 @@ except:
     arcpy.AddError(msgs)
 
     # Print Python error messages for use in Python / Python Window
-    print pymsg + "\n"
-    print msgs
-
+    #print pymsg + "\n" #UPDATE
+    #print msgs #UPDATE
+    print ((pymsg + "\n"))
+    print (msgs)
 finally:
 
     arcpy.CheckInExtension("Spatial")
